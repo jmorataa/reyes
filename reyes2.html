@@ -356,28 +356,6 @@
             font-style: italic;
             margin-top: 1rem;
         }
-
-        .photos-gallery {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin: 2rem 0;
-        }
-
-        .gallery-photo {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-            border-radius: 15px;
-            cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            border: 3px solid white;
-        }
-
-        .gallery-photo:active {
-            transform: scale(0.95);
-        }
     </style>
 </head>
 <body>
@@ -385,7 +363,6 @@
 
     <!-- Pantalla de contraseña -->
     <div class="container" id="passwordScreen">
-        <img src="foto-nosotros.jpeg" alt="Nosotros" style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 4px solid white;">
         <div class="crown">👑</div>
         <h1>Los Reyes Magos han dejado algo para ti...</h1>
         <p class="subtitle">Lucía, introduce la contraseña mágica para descubrir tu regalo</p>
@@ -561,21 +538,13 @@
             <p><strong>📍 Dónde:</strong> Ginkgo LAB Madroño (C/ General Díaz Porlier 101, Madrid)</p>
             <p><strong>⏱️ Duración:</strong> 1 hora y 30 minutos</p>
             <p><strong>👥 Plazas:</strong> 8-12 personas por taller</p>
-            <p><strong>🌐 Más info:</strong> <a href="https://www.ginkgogastrolab.com/" target="_blank" style="color: #1e3c72; text-decoration: none; border-bottom: 2px solid #7e22ce;">www.ginkgogastrolab.com</a></p>
         </div>
 
         <p class="message">
             Solo tienes que elegir qué taller te apetece más!
             Prepárate para convertirnos en unos chefs! 👨‍🍳👩‍🍳
-        </p>
 
-        <h3 style="color: #1e3c72; margin: 2rem 0 1rem 0;">💕 Nuestros Momentos 💕</h3>
-        <div class="photos-gallery">
-            <img src="foto-nosotros.jpeg" alt="Nosotros" class="gallery-photo" onclick="openGalleryPhoto('foto-nosotros.jpeg')">
-            <img src="foto-concierto.jpg" alt="Concierto" class="gallery-photo" onclick="openGalleryPhoto('foto-concierto.jpg')">
-            <img src="foto-navidad.jpg" alt="Navidad" class="gallery-photo" onclick="openGalleryPhoto('foto-navidad.jpg')">
-            <img src="foto-comiendo.jpg" alt="Comiendo" class="gallery-photo" onclick="openGalleryPhoto('foto-comiendo.jpg')">
-        </div>
+        </p>
 
         <div class="final-message">
             <p style="font-size: 1.2rem; font-style: italic;">
@@ -583,12 +552,6 @@
             </p>
             <div class="hearts" style="margin-top: 1rem;">Te quiero ❤️</div>
         </div>
-    </div>
-
-    <!-- Modal para ver la foto en grande -->
-    <div class="photo-modal" id="photoModal" onclick="closePhotoModal()">
-        <button class="photo-modal-close" onclick="closePhotoModal()">← Volver</button>
-        <img id="modalPhoto" src="foto-nosotros.jpeg" alt="Foto" onclick="event.stopPropagation()">
     </div>
 
     <script>
@@ -648,11 +611,6 @@
 
         function toggleWorkshop(element) {
             element.classList.toggle('expanded');
-        }
-
-        function openGalleryPhoto(photoSrc) {
-            document.getElementById('modalPhoto').src = photoSrc;
-            document.getElementById('photoModal').classList.add('active');
         }
 
         // Permitir Enter en el input de contraseña

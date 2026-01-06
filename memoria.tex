@@ -1,0 +1,684 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+% Configuración de listings para código
+\lstset{
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{red},
+    showstringspaces=false,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray}
+}
+
+\title{
+    \vspace*{2cm}
+    {\Huge \textbf{Estudio Comparativo de Algoritmos de Aprendizaje Automático:}}\\[0.3cm]
+    {\LARGE \textbf{K-Nearest Neighbors y K-Means con Paralelización en GPU}}\\[1.5cm]
+    {\large \textbf{Computación de Altas Prestaciones}}\\[2cm]
+}
+
+\author{
+    \ Jaime Morata Bermúdez 
+    \ Héctor Muñoz Rubio
+}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\newpage
+
+
+\tableofcontents
+\newpage
+
+\section{Introducción}
+
+Este trabajo presenta un análisis comparativo exhaustivo de dos algoritmos fundamentales de Machine Learning: K-Nearest Neighbors (KNN) para clasificación supervisada y K-Means para clustering no supervisado. El objetivo principal es evaluar el rendimiento de implementaciones paralelas en GPU (CUDA) frente a las implementaciones optimizadas de Scikit-learn.
+
+\subsection{Motivación}
+
+Con el crecimiento exponencial de los datos en aplicaciones modernas, la necesidad de procesamiento eficiente se ha vuelto crítica. Las GPUs ofrecen miles de núcleos de procesamiento que pueden acelerar significativamente algoritmos con alto paralelismo de datos, como KNN y KMeans.
+
+\subsection{Objetivos}
+
+\begin{itemize}
+    \item Implementar versiones paralelas de KNN y KMeans utilizando CUDA
+    \item Comparar el rendimiento con las implementaciones de Scikit-learn
+    \item Analizar el impacto de diferentes parámetros (K-vecinos, K-clusters)
+    \item Evaluar métricas de calidad y precisión
+    \item Identificar escenarios donde la paralelización GPU es más efectiva
+\end{itemize}
+
+\subsection{Metodología}
+
+Se han desarrollado implementaciones en:
+\begin{itemize}
+    \item \textbf{Scikit-learn}: Implementación de referencia optimizada en C++
+    \item \textbf{GPU CUDA}: Implementación nativa en CUDA C++ con kernels personalizados
+\end{itemize}
+
+Los experimentos se realizaron sobre múltiples datasets de diferentes tamaños y características para evaluar la escalabilidad.
+
+\newpage
+
+\section{K-Nearest Neighbors (KNN)}
+
+\subsection{Fundamentos Teóricos}
+
+K-Nearest Neighbors es un algoritmo de clasificación supervisada basado en instancias. Dado un punto de consulta, KNN identifica los K puntos más cercanos en el conjunto de entrenamiento y asigna la clase mayoritaria entre estos vecinos.
+
+\subsubsection{Algoritmo}
+
+\textbf{Pseudocódigo K-Nearest Neighbors:}
+
+\begin{enumerate}
+    \item \textbf{Input}: Training set $X_{train}$, labels $y_{train}$, query point $x_q$, number of neighbors $K$
+    \item Calculate distances: $d_i = ||x_q - x_i||$ for all $x_i \in X_{train}$
+    \item Sort distances and select the $K$ indices with smallest distance
+    \item Get the labels of the $K$ nearest neighbors
+    \item $\hat{y} \gets$ majority class among the $K$ neighbors
+    \item \textbf{Return} $\hat{y}$
+\end{enumerate}
+
+\subsubsection{Complejidad Computacional}
+
+\begin{itemize}
+    \item \textbf{Tiempo de predicción}: $O(n \cdot d)$ donde $n$ es el número de muestras de entrenamiento y $d$ la dimensionalidad
+    \item \textbf{Espacio}: $O(n \cdot d)$ para almacenar el conjunto de entrenamiento
+    \item \textbf{Cuello de botella}: Cálculo de distancias (altamente paralelizable)
+\end{itemize}
+
+\subsection{Implementaciones}
+
+\subsubsection{Scikit-learn}
+
+Scikit-learn implementa KNN con estructuras de datos optimizadas (KD-Tree, Ball Tree) para reducir la complejidad de búsqueda. Utiliza algoritmos de fuerza bruta optimizados en C++ con paralelización multi-threading.
+
+\textbf{Ventajas}:
+\begin{itemize}
+    \item Altamente optimizado para CPUs
+    \item Estructuras de datos eficientes
+    \item Soporte para múltiples métricas de distancia
+\end{itemize}
+
+
+
+\subsubsection{Implementación GPU CUDA}
+
+La implementación CUDA divide el trabajo en dos fases:
+
+\textbf{Fase 1: Cálculo de distancias (GPU)}
+\begin{lstlisting}[language=C, caption=Kernel CUDA para cálculo de distancias]
+__global__ void compute_distances_kernel(
+    float *X_train, float *X_test, float *dist_matrix,
+    int n_train, int n_test, int n_features) {
+    
+    int test_idx = blockIdx.y * blockDim.y + threadIdx.y;
+    int train_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    if (test_idx < n_test && train_idx < n_train) {
+        float sum_sq = 0.0f;
+        for (int k = 0; k < n_features; k++) {
+            float diff = X_test[test_idx * n_features + k] 
+                       - X_train[train_idx * n_features + k];
+            sum_sq += diff * diff;
+        }
+        dist_matrix[test_idx * n_train + train_idx] = sqrtf(sum_sq);
+    }
+}
+\end{lstlisting}
+
+\textbf{Fase 2: Votación (CPU)}
+
+Después de calcular todas las distancias en GPU, se transfieren a CPU para ordenar y realizar la votación. Esta es una aproximación híbrida que balancea el overhead de transferencia.
+
+\textbf{Configuración de Grid}:
+\begin{itemize}
+    \item Bloques 2D: $(16 \times 16)$ threads por bloque
+    \item Grid: $\lceil n_{test}/16 \rceil \times \lceil n_{train}/16 \rceil$ bloques
+    \item Cada thread calcula una distancia
+\end{itemize}
+
+\subsection{Datasets Utilizados}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Dataset} & \textbf{Muestras} & \textbf{Features} & \textbf{Clases} \\
+\hline
+Digits & 1797 & 64 & 10 \\
+Wine & 178 & 13 & 3 \\
+Breast Cancer & 569 & 30 & 2 \\
+MNIST (subset) & 5000 & 784 & 10 \\
+\hline
+\end{tabular}
+\caption{Características de los datasets para KNN}
+\end{table}
+
+\subsection{Resultados Experimentales}
+
+\subsubsection{Análisis de Rendimiento por Dataset}
+
+Los experimentos muestran que el rendimiento relativo entre implementaciones varía significativamente según las características del dataset:
+
+\textbf{Datasets Pequeños (Wine, Digits)}:
+\begin{itemize}
+    \item Scikit-learn domina debido a optimizaciones de bajo nivel
+    \item GPU sufre overhead de transferencia de datos
+    \item CPU paralelo competitivo pero ligeramente más lento
+\end{itemize}
+
+\textbf{Datasets Grandes (MNIST)}:
+\begin{itemize}
+    \item GPU CUDA muestra aceleración significativa
+    \item El alto número de cálculos de distancia amortiza el overhead
+    \item CPU paralelo mejora pero limitado por número de cores
+\end{itemize}
+
+\subsubsection{Impacto del Parámetro K}
+
+El análisis de diferentes valores de K (1, 3, 5, 7, 10, 15, 20, 25, 30) revela:
+
+\begin{itemize}
+    \item \textbf{Tiempo de ejecución}: Incremento marginal con K mayor (el cuello de botella es el cálculo de distancias, no la votación)
+    \item \textbf{Accuracy}: Típicamente mejora hasta K=5-7, luego se estabiliza o decrece
+    \item \textbf{Speedup GPU}: Relativamente constante respecto a K (el cálculo de distancias domina)
+\end{itemize}
+
+\textbf{Observación clave}: Para K pequeños (K<10), el tiempo de votación es despreciable comparado con el cálculo de distancias, validando la estrategia híbrida GPU-CPU.
+
+\subsubsection{Métricas de Calidad}
+
+Todas las implementaciones producen resultados idénticos en términos de accuracy, validando la correctitud de las implementaciones paralelas:
+
+\begin{itemize}
+    \item \textbf{Digits}: $\sim$97-98\% accuracy (K=5)
+    \item \textbf{Wine}: $\sim$95-97\% accuracy (K=5)
+    \item \textbf{Breast Cancer}: $\sim$95-96\% accuracy (K=5)
+\end{itemize}
+
+\subsubsection{Resultados Visuales}
+
+La Figura \ref{fig:knn_results} muestra los resultados experimentales de KNN comparando las tres implementaciones (Scikit-learn, CPU Paralelo, GPU CUDA) en términos de tiempo de ejecución y precisión.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/knn/cell_11_output_0.png}
+\caption{Comparación de rendimiento de KNN: tiempo de ejecución y accuracy para diferentes datasets. Se observa que Scikit-learn mantiene ventaja en datasets pequeños, mientras que las implementaciones paralelas muestran competitividad en datasets más grandes.}
+\label{fig:knn_results}
+\end{figure}
+
+La Figura \ref{fig:knn_speedup} presenta el análisis de speedup, mostrando el factor de aceleración de las implementaciones paralelas respecto a Scikit-learn.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/knn/cell_13_output_1.png}
+\caption{Análisis de speedup para KNN. Valores mayores a 1 indican que la implementación es más rápida que Scikit-learn. Se observa que el speedup mejora con el tamaño del dataset.}
+\label{fig:knn_speedup}
+\end{figure}
+
+\subsection{Análisis de Speedup}
+
+El speedup se define como:
+$$\text{Speedup} = \frac{T_{\text{Scikit-learn}}}{T_{\text{Implementación}}}$$
+
+\textbf{Resultados típicos}:
+\begin{itemize}
+    \item \textbf{Datasets pequeños}: Speedup $< 1$ (GPU más lento debido a overhead)
+    \item \textbf{Datasets medianos}: Speedup $\approx 1$ (punto de equilibrio)
+    \item \textbf{Datasets grandes}: Speedup $> 1$ (GPU muestra ventaja)
+\end{itemize}
+
+\textbf{Factores limitantes}:
+\begin{itemize}
+    \item Transferencia de datos CPU $\leftrightarrow$ GPU
+    \item Ordenación y votación en CPU
+    \item Optimizaciones agresivas de Scikit-learn
+\end{itemize}
+
+\newpage
+
+\section{K-Means Clustering}
+
+\subsection{Fundamentos Teóricos}
+
+K-Means es un algoritmo de clustering no supervisado que particiona $n$ observaciones en $K$ clusters, donde cada observación pertenece al cluster con la media más cercana.
+
+\subsubsection{Lloyd's Algorithm}
+
+\textbf{Pseudocode K-Means (Lloyd's Algorithm):}
+
+\begin{enumerate}
+    \item \textbf{Input}: Dataset $X$, number of clusters $K$, max iterations
+    \item Initialize $K$ centroids randomly
+    \item \textbf{Repeat} until convergence or max iterations:
+    \begin{itemize}
+        \item \textbf{Assignment}: For each point $x_i$, assign to nearest cluster
+        \item $a_i \gets \arg\min_j ||x_i - c_j||^2$
+        \item \textbf{Update}: Recalculate centroids as mean of assigned points
+        \item $c_j \gets \frac{1}{|C_j|} \sum_{x_i \in C_j} x_i$
+    \end{itemize}
+    \item \textbf{Return} Centroids $C$, assignments $A$
+\end{enumerate}
+
+\subsubsection{Complejidad Computacional}
+
+\begin{itemize}
+    \item \textbf{Por iteración}: $O(n \cdot K \cdot d)$ donde $n$ = muestras, $K$ = clusters, $d$ = dimensionalidad
+    \item \textbf{Total}: $O(i \cdot n \cdot K \cdot d)$ donde $i$ = número de iteraciones
+    \item \textbf{Convergencia}: Típicamente 10-100 iteraciones
+\end{itemize}
+
+\subsection{Implementaciones}
+
+\subsubsection{Scikit-learn}
+
+Implementación altamente optimizada con:
+\begin{itemize}
+    \item Inicialización K-Means++ para mejores centroides iniciales
+    \item Múltiples inicializaciones (n\_init) para evitar mínimos locales
+    \item Optimizaciones vectorizadas con NumPy/BLAS
+    \item Paralelización multi-threading
+\end{itemize}
+
+\subsubsection{Implementación GPU CUDA}
+
+\textbf{Fase de Asignación (GPU)}:
+\begin{lstlisting}[language=C, caption=Kernel CUDA para asignación de clusters]
+__global__ void assign_clusters(
+    float *data, float *centroids, int *assignments,
+    int n_samples, int n_features, int n_clusters) {
+    
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    if (idx < n_samples) {
+        float min_dist = FLT_MAX;
+        int best_cluster = 0;
+        
+        for (int c = 0; c < n_clusters; c++) {
+            float dist = 0.0f;
+            for (int f = 0; f < n_features; f++) {
+                float diff = data[idx * n_features + f] 
+                           - centroids[c * n_features + f];
+                dist += diff * diff;
+            }
+            if (dist < min_dist) {
+                min_dist = dist;
+                best_cluster = c;
+            }
+        }
+        assignments[idx] = best_cluster;
+    }
+}
+\end{lstlisting}
+
+\textbf{Fase de Actualización (CPU)}:
+
+La actualización de centroides se realiza en CPU por simplicidad y eficiencia para valores pequeños de K:
+
+\begin{lstlisting}[language=C, caption=Actualización de centroides en CPU]
+void update_centroids(float *data, int *assignments, 
+                      float *centroids, int n_samples, 
+                      int n_features, int n_clusters) {
+    memset(centroids, 0, n_clusters * n_features * sizeof(float));
+    int *counts = calloc(n_clusters, sizeof(int));
+    
+    // Sumar puntos por cluster
+    for (int i = 0; i < n_samples; i++) {
+        int cluster = assignments[i];
+        counts[cluster]++;
+        for (int f = 0; f < n_features; f++) {
+            centroids[cluster * n_features + f] += 
+                data[i * n_features + f];
+        }
+    }
+    
+    // Promediar
+    for (int c = 0; c < n_clusters; c++) {
+        if (counts[c] > 0) {
+            for (int f = 0; f < n_features; f++) {
+                centroids[c * n_features + f] /= counts[c];
+            }
+        }
+    }
+    free(counts);
+}
+\end{lstlisting}
+
+\subsection{Datasets Utilizados}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Dataset} & \textbf{Muestras} & \textbf{Features} & \textbf{K óptimo} \\
+\hline
+Iris & 150 & 4 & 3 \\
+Wine & 178 & 13 & 3 \\
+Breast Cancer & 569 & 30 & 2 \\
+Digits & 1797 & 64 & 10 \\
+\hline
+\end{tabular}
+\caption{Características de los datasets para K-Means}
+\end{table}
+
+\subsection{Métricas de Evaluación}
+
+\subsubsection{Inercia}
+
+La inercia mide la suma de distancias cuadradas de cada punto a su centroide:
+$$\text{Inertia} = \sum_{i=1}^{n} \min_{c \in C} ||x_i - c||^2$$
+
+Valores más bajos indican clusters más compactos.
+
+\subsubsection{Silhouette Score}
+
+El Silhouette Score mide qué tan similar es un objeto a su propio cluster comparado con otros clusters:
+$$s(i) = \frac{b(i) - a(i)}{\max\{a(i), b(i)\}}$$
+
+donde:
+\begin{itemize}
+    \item $a(i)$: distancia media intra-cluster
+    \item $b(i)$: distancia media al cluster más cercano
+    \item Rango: $[-1, 1]$, valores más altos son mejores
+\end{itemize}
+
+\subsection{Resultados Experimentales}
+
+\subsubsection{Validación de Calidad}
+
+Comparación de Silhouette Scores entre implementaciones:
+
+\textbf{Observaciones}:
+\begin{itemize}
+    \item Diferencias $< 5\%$ entre CUDA y Scikit-learn
+    \item Ambas implementaciones convergen a soluciones similares
+    \item Pequeñas variaciones debido a diferencias en inicialización aleatoria
+\end{itemize}
+
+\textbf{Conclusión}: Las implementaciones CUDA son correctas y producen clustering de calidad comparable.
+
+\subsubsection{Análisis de Convergencia}
+
+\begin{itemize}
+    \item \textbf{Iteraciones típicas}: 5-20 iteraciones hasta convergencia
+    \item \textbf{Criterio de parada}: Cambio en centroides $< 10^{-4}$
+    \item \textbf{Observación}: CUDA y Scikit-learn convergen en número similar de iteraciones
+\end{itemize}
+
+\subsubsection{Impacto del Número de Clusters (K)}
+
+Análisis con K $\in \{2, 3, 4, 5, 6, 8, 10, 12, 15\}$:
+
+\textbf{Tiempo de ejecución}:
+\begin{itemize}
+    \item Incremento lineal con K (más centroides $\rightarrow$ más comparaciones)
+    \item GPU mantiene ventaja relativa constante
+    \item Overhead de transferencia se amortiza mejor con K grande
+\end{itemize}
+
+\textbf{Calidad (Silhouette Score)}:
+\begin{itemize}
+    \item Máximo típicamente en K = número real de clases
+    \item Decrece con K muy grande (over-clustering)
+    \item Método del codo útil para seleccionar K óptimo
+\end{itemize}
+
+\textbf{Inercia}:
+\begin{itemize}
+    \item Decrece monótonamente con K
+    \item No útil por sí sola para seleccionar K
+    \item Combinada con Silhouette Score da mejor insight
+\end{itemize}
+
+\subsubsection{Resultados Visuales}
+
+Las siguientes figuras muestran los resultados experimentales completos de K-Means comparando las implementaciones de Scikit-learn y CUDA.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/kmeans/cell_11_output_0.png}
+\caption{Análisis de K-Means: Tiempo de ejecución vs número de clusters (K). Se observa el incremento lineal del tiempo con K, y cómo ambas implementaciones mantienen rendimiento similar.}
+\label{fig:kmeans_time_vs_k}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/kmeans/cell_13_output_0.png}
+\caption{Silhouette Score vs K para K-Means. Esta métrica de calidad muestra que ambas implementaciones (CUDA y Scikit-learn) producen resultados muy similares, validando la correctitud de la implementación GPU.}
+\label{fig:kmeans_silhouette}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/kmeans/cell_15_output_0.png}
+\caption{Inercia vs K para K-Means. La inercia decrece monótonamente con K, como se esperaba teóricamente. Ambas implementaciones muestran valores prácticamente idénticos.}
+\label{fig:kmeans_inertia}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/kmeans/cell_17_output_0.png}
+\caption{Speedup de CUDA vs Scikit-learn para diferentes valores de K. El speedup se mantiene relativamente constante respecto a K, indicando que el overhead de transferencia se amortiza de manera similar independientemente del número de clusters.}
+\label{fig:kmeans_speedup}
+\end{figure}
+
+\subsection{Análisis de Rendimiento}
+
+\subsubsection{Speedup por Dataset}
+
+\textbf{Datasets pequeños (Iris, Wine)}:
+\begin{itemize}
+    \item Speedup $< 1$: Overhead de GPU domina
+    \item Pocas muestras $\rightarrow$ poca paralelización
+    \item Scikit-learn más eficiente
+\end{itemize}
+
+\textbf{Datasets medianos (Breast Cancer)}:
+\begin{itemize}
+    \item Speedup $\approx 1$: Punto de equilibrio
+    \item Beneficio de GPU compensa overhead
+\end{itemize}
+
+\textbf{Datasets grandes (Digits)}:
+\begin{itemize}
+    \item Speedup $> 1$: GPU muestra ventaja
+    \item Alto paralelismo aprovecha GPU
+    \item Múltiples iteraciones amplifican beneficio
+\end{itemize}
+
+\subsubsection{Análisis de Escalabilidad}
+
+El speedup mejora con:
+\begin{itemize}
+    \item \textbf{Número de muestras}: Más paralelismo de datos
+    \item \textbf{Número de features}: Más trabajo por thread
+    \item \textbf{Número de iteraciones}: Amortiza overhead de transferencia
+\end{itemize}
+
+\textbf{Limitaciones}:
+\begin{itemize}
+    \item Transferencia de centroides cada iteración
+    \item Actualización de centroides en CPU
+    \item Inicialización aleatoria en CPU
+\end{itemize}
+
+\newpage
+
+\section{Comparación Global}
+
+\subsection{KNN vs K-Means en GPU}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Aspecto} & \textbf{KNN} & \textbf{K-Means} \\
+\hline
+Tipo & Supervisado & No supervisado \\
+Paralelismo & Alto (por muestra test) & Alto (por muestra) \\
+Transferencias GPU & 1 vez & Por iteración \\
+Cuello de botella & Cálculo distancias & Asignación clusters \\
+Speedup típico & Moderado & Moderado-Alto \\
+Escalabilidad & Buena con n grande & Buena con n e i grandes \\
+\hline
+\end{tabular}
+\caption{Comparación KNN vs K-Means en GPU}
+\end{table}
+
+\subsection{Factores de Éxito para Paralelización GPU}
+
+\textbf{Favorables}:
+\begin{itemize}
+    \item Alto número de muestras ($n > 1000$)
+    \item Alta dimensionalidad ($d > 50$)
+    \item Múltiples iteraciones (K-Means)
+    \item Operaciones independientes
+    \item Cálculos intensivos vs. transferencias
+\end{itemize}
+
+\textbf{Desfavorables}:
+\begin{itemize}
+    \item Datasets pequeños ($n < 500$)
+    \item Baja dimensionalidad ($d < 10$)
+    \item Pocas iteraciones
+    \item Dependencias de datos
+    \item Overhead de transferencia alto
+\end{itemize}
+
+\subsection{Recomendaciones Prácticas}
+
+\begin{enumerate}
+    \item \textbf{Datasets pequeños}: Usar Scikit-learn (altamente optimizado)
+    \item \textbf{Datasets grandes}: GPU CUDA (máximo rendimiento)
+    \item \textbf{Producción}: Considerar overhead de desarrollo y mantenimiento
+    \item \textbf{Investigación}: GPU permite experimentación rápida con datos grandes
+\end{enumerate}
+
+\newpage
+
+\section{Conclusiones}
+
+\subsection{Logros Principales}
+
+\begin{enumerate}
+    \item \textbf{Implementaciones correctas}: Todas las versiones producen resultados equivalentes en calidad
+    \item \textbf{Análisis exhaustivo}: Evaluación en múltiples datasets y configuraciones
+    \item \textbf{Insights de rendimiento}: Identificación clara de escenarios donde GPU es beneficioso
+    \item \textbf{Metodología reproducible}: Código y experimentos completamente documentados
+\end{enumerate}
+
+\subsection{Hallazgos Clave}
+
+\begin{itemize}
+    \item \textbf{Scikit-learn}: Difícil de superar en datasets pequeños-medianos debido a optimizaciones agresivas
+    \item \textbf{GPU CUDA}: Muestra ventajas claras solo con datasets suficientemente grandes
+    \item \textbf{Overhead}: La transferencia de datos CPU-GPU es el factor limitante principal
+    \item \textbf{Paralelismo}: Ambos algoritmos son altamente paralelizables pero requieren datasets grandes para amortizar overhead
+\end{itemize}
+
+\subsection{Trabajo Futuro}
+
+\begin{enumerate}
+    \item \textbf{Optimizaciones GPU}:
+    \begin{itemize}
+        \item Implementar ordenación en GPU para KNN
+        \item Actualización de centroides en GPU para K-Means
+        \item Uso de memoria compartida para reducir accesos a memoria global
+    \end{itemize}
+    
+    \item \textbf{Algoritmos adicionales}:
+    \begin{itemize}
+        \item K-Means++ en GPU
+        \item Variantes de KNN (weighted, radius-based)
+        \item Otros algoritmos de clustering (DBSCAN, Hierarchical)
+    \end{itemize}
+    
+    \item \textbf{Escalabilidad}:
+    \begin{itemize}
+        \item Multi-GPU para datasets masivos
+        \item Procesamiento en streaming
+        \item Integración con frameworks de Big Data
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Lecciones Aprendidas}
+
+\begin{enumerate}
+    \item \textbf{Perfilado es esencial}: Identificar cuellos de botella antes de optimizar
+    \item \textbf{Transferencias importan}: Minimizar movimiento de datos CPU-GPU
+    \item \textbf{Granularidad correcta}: Balance entre paralelismo y overhead
+    \item \textbf{Validación rigurosa}: Comparar no solo tiempo sino también calidad
+    \item \textbf{Contexto importa}: No hay solución universal, depende del problema
+\end{enumerate}
+
+\newpage
+
+\section{Apéndices}
+
+\subsection{Especificaciones del Sistema}
+
+\textbf{Hardware}:
+\begin{itemize}
+    \item GPU: NVIDIA (arquitectura Turing o superior)
+    \item CPU: Multi-core (4+ cores recomendado)
+    \item RAM: 8GB+ recomendado
+\end{itemize}
+
+\textbf{Software}:
+\begin{itemize}
+    \item CUDA Toolkit 11.0+
+    \item Python 3.8+
+    \item Scikit-learn 1.0+
+    \item NumPy, Matplotlib, Pandas
+\end{itemize}
+
+\subsection{Configuraciones de Compilación}
+
+\textbf{CUDA}:
+\begin{lstlisting}[language=bash]
+nvcc -arch=sm_75 -o knn knn.cu
+nvcc -arch=sm_75 -o kmeans kmeans.cu
+\end{lstlisting}
+
+\textbf{Flags importantes}:
+\begin{itemize}
+    \item \texttt{-arch=sm\_75}: Arquitectura Turing
+    \item \texttt{-O3}: Optimización máxima
+    \item \texttt{-use\_fast\_math}: Mate´máticas rápidas (menor precisión)
+\end{itemize}
+
+\subsection{Reproducibilidad}
+
+Todos los experimentos son reproducibles ejecutando los notebooks Jupyter proporcionados:
+\begin{itemize}
+    \item \texttt{knn\_cuda\_native.ipynb}: Experimentos KNN
+    \item \texttt{kmeans\_cuda\_native.ipynb}: Experimentos K-Means
+\end{itemize}
+
+Seeds aleatorias fijadas en 42 para reproducibilidad.
+
+
+\end{document}
