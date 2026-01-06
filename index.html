@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Un Regalo Especial ✨</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            padding: 2rem 0;
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            animation: fadeIn 1s ease-in;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .crown {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h1 {
+            color: #1e3c72;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+            font-style: italic;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+            border: 2px solid #2a5298;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            color: white;
+            border: none;
+            padding: 1rem 3rem;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(30, 60, 114, 0.4);
+        }
+
+        .error {
+            color: #e74c3c;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .reveal-screen {
+            animation: fadeIn 1s ease-in;
+        }
+
+        .gift-box {
+            font-size: 5rem;
+            margin: 2rem 0;
+            cursor: pointer;
+            transition: transform 0.3s;
+            animation: shake 2s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+
+        .gift-box:hover {
+            transform: scale(1.1);
+        }
+
+        .message {
+            font-size: 1.2rem;
+            color: #333;
+            line-height: 1.8;
+            margin: 2rem 0;
+        }
+
+        .final-reveal {
+            animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .workshop-card {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .workshop-card h2 {
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+        }
+
+        .hearts {
+            font-size: 2rem;
+            margin: 1rem 0;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f0f;
+            position: absolute;
+            animation: confetti-fall 3s linear infinite;
+        }
+
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .final-message {
+            background: rgba(30, 60, 114, 0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 2rem;
+            border-left: 4px solid #2a5298;
+        }
+
+        .info-box {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            text-align: left;
+        }
+
+        .info-box strong {
+            color: #1e3c72;
+        }
+
+        .logo-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1.5rem 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            animation: logoGlow 2s infinite;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes logoGlow {
+            0%, 100% { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
+            50% { box-shadow: 0 6px 20px rgba(42, 82, 152, 0.3); }
+        }
+
+        .workshops-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .workshop-banner {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .workshop-banner:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            border-color: #2a5298;
+        }
+
+        .workshop-banner.mexicana { border-left: 5px solid #ff6b6b; }
+        .workshop-banner.sushi { border-left: 5px solid #ee5a6f; }
+        .workshop-banner.tapas { border-left: 5px solid #ffd93d; }
+        .workshop-banner.italiana { border-left: 5px solid #6bcf7f; }
+        .workshop-banner.cocteleria { border-left: 5px solid #4ecdc4; }
+
+        .workshop-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .workshop-icon {
+            font-size: 2.5rem;
+        }
+
+        .workshop-title {
+            flex: 1;
+            text-align: left;
+        }
+
+        .workshop-title h3 {
+            color: #333;
+            margin: 0;
+            font-size: 1.3rem;
+        }
+
+        .workshop-expand {
+            font-size: 1.5rem;
+            color: #2a5298;
+            transition: transform 0.3s;
+        }
+
+        .workshop-banner.expanded .workshop-expand {
+            transform: rotate(180deg);
+        }
+
+        .workshop-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+            text-align: left;
+            color: #333;
+        }
+
+        .workshop-banner.expanded .workshop-details {
+            max-height: 1000px;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 2px solid rgba(42, 82, 152, 0.2);
+        }
+
+        .workshop-details h4 {
+            color: #1e3c72;
+            margin-bottom: 0.5rem;
+        }
+
+        .workshop-details ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .workshop-details li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .workshop-details li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #2a5298;
+            font-weight: bold;
+        }
+
+        .includes {
+            background: rgba(42, 82, 152, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .click-hint {
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            font-style: italic;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+
+    <!-- Pantalla de contraseña -->
+    <div class="container" id="passwordScreen">
+        <div class="crown">👑</div>
+        <h1>Los Reyes Magos han dejado algo para ti...</h1>
+        <p class="subtitle">Lucía, introduce la contraseña mágica para descubrir tu regalo</p>
+        <input type="password" id="passwordInput" placeholder="Escribe aquí la contraseña" autocomplete="off">
+        <button onclick="checkPassword()">✨ Descubrir Regalo ✨</button>
+        <p class="error hidden" id="error">¡Ups! Esa no es la contraseña correcta... Inténtalo de nuevo</p>
+    </div>
+
+    <!-- Pantalla de revelación inicial -->
+    <div class="container hidden reveal-screen" id="revealScreen">
+        <h1>¡Contraseña correcta! 🎉</h1>
+        <div class="gift-box" onclick="openGift()" id="giftBox">🎁</div>
+        <p class="message">Haz clic en el regalo para descubrir lo que los Reyes te han traído...</p>
+    </div>
+
+    <!-- Pantalla final -->
+    <div class="container hidden final-reveal" id="finalScreen">
+        <div class="crown">👑✨👑</div>
+        <h1>¡Tu Regalo de Reyes 2026!</h1>
+        <div class="hearts">💕 💝 💕</div>
+        
+        <p class="message">
+            Lucía, este año los Reyes Magos (con un poco de ayuda 😊) han decidido que tu regalo sea... 
+        </p>
+
+        <div class="workshop-card">
+            <div class="logo-container">
+                <div style="font-family: 'Georgia', serif; color: #333; text-align: center; width: 100%;">
+                    <div style="font-size: 2.5rem; font-weight: bold; letter-spacing: 3px; margin-bottom: 0.3rem; line-height: 1; color: #1e3c72;">Ginkgo</div>
+                    <div style="font-size: 2rem; font-weight: 300; letter-spacing: 5px; line-height: 1; margin-bottom: 0.5rem; color: #7e22ce;">LAB</div>
+                    <div style="font-size: 0.9rem; letter-spacing: 2px; line-height: 1; color: #555;">MADROÑO</div>
+                </div>
+            </div>
+            <h2>🍳 ¡Un Taller de Cocina para los Dos! 🍳</h2>
+            <p style="font-size: 1.1rem; margin: 1rem 0;">
+                A convertirnos en grandes chefs!!
+            </p>
+        </div>
+
+        <h3 style="color: #1e3c72; margin: 2rem 0 1rem 0;">Elige tu taller favorito:</h3>
+        <p class="click-hint">👆 Haz clic en cada taller para ver el programa completo</p>
+
+        <div class="workshops-grid">
+            <!-- Cocina Mexicana -->
+            <div class="workshop-banner mexicana" onclick="toggleWorkshop(this)">
+                <div class="workshop-header">
+                    <div class="workshop-icon">🌮</div>
+                    <div class="workshop-title">
+                        <h3>Cocina Mexicana</h3>
+                    </div>
+                    <div class="workshop-expand">▼</div>
+                </div>
+                <div class="workshop-details">
+                    <h4>Programa:</h4>
+                    <ul>
+                        <li>Nociones básicas de cocina mexicana</li>
+                        <li>Corte de los diferentes ingredientes</li>
+                        <li>Preparación de guacamole</li>
+                        <li>Preparación de pico de gallo</li>
+                        <li>Preparación de tiradito de hamachi</li>
+                        <li>Cómo elaborar la carne de cochinita</li>
+                        <li>Montajes de platos</li>
+                        <li>Degustación</li>
+                    </ul>
+                    <div class="includes">
+                        <strong>✨ Incluye:</strong> Una bebida, postre y diploma
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sushi -->
+            <div class="workshop-banner sushi" onclick="toggleWorkshop(this)">
+                <div class="workshop-header">
+                    <div class="workshop-icon">🍣</div>
+                    <div class="workshop-title">
+                        <h3>Sushi</h3>
+                    </div>
+                    <div class="workshop-expand">▼</div>
+                </div>
+                <div class="workshop-details">
+                    <h4>Programa:</h4>
+                    <ul>
+                        <li>Nociones básicas sobre el sushi</li>
+                        <li>Preparación del arroz</li>
+                        <li>Corte de pescado</li>
+                        <li>Elaboración de niguiris y makis</li>
+                        <li>Técnica de enrollado y corte</li>
+                        <li>Montajes de platos</li>
+                        <li>Degustación</li>
+                    </ul>
+                    <div class="includes">
+                        <strong>✨ Incluye:</strong> Bebida, postre y diploma
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tapas Españolas -->
+            <div class="workshop-banner tapas" onclick="toggleWorkshop(this)">
+                <div class="workshop-header">
+                    <div class="workshop-icon">🥘</div>
+                    <div class="workshop-title">
+                        <h3>Tapas Españolas</h3>
+                    </div>
+                    <div class="workshop-expand">▼</div>
+                </div>
+                <div class="workshop-details">
+                    <h4>Programa:</h4>
+                    <ul>
+                        <li>Introducción a las tapas españolas</li>
+                        <li>Preparación de croquetas</li>
+                        <li>Elaboración de la tortilla de patatas</li>
+                        <li>Cocina de la paella mixta</li>
+                        <li>Montaje y presentación de platos</li>
+                        <li>Degustación</li>
+                    </ul>
+                    <div class="includes">
+                        <strong>✨ Incluye:</strong> Una bebida, postre y diploma
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cocina Italiana -->
+            <div class="workshop-banner italiana" onclick="toggleWorkshop(this)">
+                <div class="workshop-header">
+                    <div class="workshop-icon">🍝</div>
+                    <div class="workshop-title">
+                        <h3>Cocina Italiana</h3>
+                    </div>
+                    <div class="workshop-expand">▼</div>
+                </div>
+                <div class="workshop-details">
+                    <h4>Programa:</h4>
+                    <ul>
+                        <li>Elaboración de tiramisú</li>
+                        <li>Corte de ingredientes</li>
+                        <li>Elaboración con pasta tradicional</li>
+                        <li>Montajes de platos</li>
+                        <li>Degustación</li>
+                    </ul>
+                    <div class="includes">
+                        <strong>✨ Incluye:</strong> Una bebida, postre y diploma
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coctelería -->
+            <div class="workshop-banner cocteleria" onclick="toggleWorkshop(this)">
+                <div class="workshop-header">
+                    <div class="workshop-icon">🍹</div>
+                    <div class="workshop-title">
+                        <h3>Coctelería de Autor</h3>
+                    </div>
+                    <div class="workshop-expand">▼</div>
+                </div>
+                <div class="workshop-details">
+                    <h4>Programa:</h4>
+                    <ul>
+                        <li>Bienvenida con nuestro cóctel Bali Spritz</li>
+                        <li>Introducción a la coctelería: licores y siropes</li>
+                        <li>Elaboración de Paloma Patrón</li>
+                        <li>Picoteo</li>
+                        <li>Elabora tu propio cóctel</li>
+                        <li>Degustación</li>
+                    </ul>
+                    <div class="includes">
+                        <strong>✨ Incluye:</strong> Diploma
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <p><strong>📍 Dónde:</strong> Ginkgo LAB Madroño (C/ General Díaz Porlier 101, Madrid)</p>
+            <p><strong>⏱️ Duración:</strong> 1 hora y 30 minutos</p>
+            <p><strong>👥 Plazas:</strong> 8-12 personas por taller</p>
+        </div>
+
+        <p class="message">
+            Solo tienes que elegir qué taller te apetece más!
+            Prepárate para convertirnos en unos chefs! 👨‍🍳👩‍🍳
+
+        </p>
+
+        <div class="final-message">
+            <p style="font-size: 1.2rem; font-style: italic;">
+                Que este año sea muy feliz para los dos, que nos riamos mucho y nos queramos mejor.
+            </p>
+            <div class="hearts" style="margin-top: 1rem;">Te quiero ❤️</div>
+        </div>
+    </div>
+
+    <script>
+        // Crear estrellas
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 100; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.width = Math.random() * 3 + 'px';
+            star.style.height = star.style.width;
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            starsContainer.appendChild(star);
+        }
+
+        function checkPassword() {
+            const password = document.getElementById('passwordInput').value;
+            const error = document.getElementById('error');
+            
+            if (password === 'REYES2026LUCI') {
+                document.getElementById('passwordScreen').classList.add('hidden');
+                document.getElementById('revealScreen').classList.remove('hidden');
+                error.classList.add('hidden');
+            } else {
+                error.classList.remove('hidden');
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('passwordInput').style.animation = 'none';
+                setTimeout(() => {
+                    document.getElementById('passwordInput').style.animation = '';
+                }, 10);
+            }
+        }
+
+        function openGift() {
+            const giftBox = document.getElementById('giftBox');
+            giftBox.style.animation = 'none';
+            
+            // Crear confeti
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.background = ['#1e3c72', '#2a5298', '#7e22ce', '#ffd700', '#ff69b4'][Math.floor(Math.random() * 5)];
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    document.body.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 3000);
+                }, i * 30);
+            }
+
+            setTimeout(() => {
+                document.getElementById('revealScreen').classList.add('hidden');
+                document.getElementById('finalScreen').classList.remove('hidden');
+            }, 1000);
+        }
+
+        function toggleWorkshop(element) {
+            element.classList.toggle('expanded');
+        }
+
+        // Permitir Enter en el input de contraseña
+        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+    </script>
+</body>
+</html>
