@@ -241,6 +241,61 @@
             50% { box-shadow: 0 6px 20px rgba(42, 82, 152, 0.3); }
         }
 
+        .big-gift-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 2rem auto;
+        }
+
+        .big-gift {
+            font-size: 15rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            display: block;
+            text-align: center;
+            animation: giftPulse 2s infinite;
+        }
+
+        .big-gift:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes giftPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .unwrap {
+            animation: unwrapGift 1s ease-out forwards;
+        }
+
+        @keyframes unwrapGift {
+            0% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.5) rotate(180deg);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(0) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .gift-content {
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 1s ease-out;
+        }
+
+        .gift-content.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
         .workshops-grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -382,15 +437,10 @@
 
         .gallery-photo:nth-child(3) {
             object-position: center 75%;
-            transform: scale(0.85);
         }
 
         .gallery-photo:active {
             transform: scale(0.95);
-        }
-
-        .gallery-photo:nth-child(3):active {
-            transform: scale(0.80);
         }
     </style>
 </head>
@@ -411,21 +461,24 @@
     <!-- Pantalla de revelación inicial -->
     <div class="container hidden reveal-screen" id="revealScreen">
         <h1>¡Contraseña correcta! 🎉</h1>
-        <div class="gift-box" onclick="openGift()" id="giftBox">🎁</div>
+        <div class="big-gift-wrapper">
+            <div class="big-gift" onclick="openGift()" id="bigGift">🎁</div>
+        </div>
         <p class="message">Haz clic en el regalo para descubrir lo que los Reyes te han traído...</p>
     </div>
 
-    <!-- Pantalla final -->
+    <!-- Pantalla final con Ginkgo LAB -->
     <div class="container hidden final-reveal" id="finalScreen">
-        <div class="crown">👑✨👑</div>
-        <h1>¡Tu Regalo de Reyes 2026!</h1>
-        <div class="hearts">💕 💝 💕</div>
-        
-        <p class="message">
-            Lucía, este año los Reyes Magos (con un poco de ayuda 😊) han decidido que tu regalo sea... 
-        </p>
+        <div class="gift-content" id="giftContent">
+            <div class="crown">👑✨👑</div>
+            <h1>¡Tu Regalo de Reyes 2026!</h1>
+            <div class="hearts">💕 💝 💕</div>
+            
+            <p class="message">
+                Lucía, este año los Reyes Magos (con un poco de ayuda 😊) han decidido que tu regalo sea... 
+            </p>
 
-        <div class="workshop-card">
+            <div class="workshop-card">
             <div class="logo-container">
                 <div style="font-family: 'Georgia', serif; color: #333; text-align: center; width: 100%;">
                     <div style="font-size: 2.5rem; font-weight: bold; letter-spacing: 3px; margin-bottom: 0.3rem; line-height: 1; color: #1e3c72;">Ginkgo</div>
@@ -597,6 +650,7 @@
             </p>
             <div class="hearts" style="margin-top: 1rem;">Te quiero ❤️</div>
         </div>
+        </div>
     </div>
 
     <script>
@@ -632,8 +686,8 @@
         }
 
         function openGift() {
-            const giftBox = document.getElementById('giftBox');
-            giftBox.style.animation = 'none';
+            const bigGift = document.getElementById('bigGift');
+            bigGift.classList.add('unwrap');
             
             // Crear confeti
             for (let i = 0; i < 50; i++) {
@@ -651,6 +705,9 @@
             setTimeout(() => {
                 document.getElementById('revealScreen').classList.add('hidden');
                 document.getElementById('finalScreen').classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('giftContent').classList.add('show');
+                }, 100);
             }, 1000);
         }
 
